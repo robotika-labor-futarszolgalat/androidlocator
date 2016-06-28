@@ -267,8 +267,6 @@ public class Main2Activity extends AppCompatActivity
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_LONG;
 
-        String[] mobileArray = {"Android","IPhone","WindowsMobile","Blackberry","WebOS","Ubuntu","Windows7","Max OS X"};
-
         mArrayAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.activity_listview);
         ListView listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(mArrayAdapter);
@@ -312,14 +310,18 @@ public class Main2Activity extends AppCompatActivity
                 int  rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
                 // Add the name and address to an array adapter to show in a ListView
                 mArrayAdapter.add(device.getName() + "\n" + device.getAddress() + "\n" + "RSSI: " + rssi + "dBm");
+                String btData = String.format("{\"action\":\"found.bluetooth\", \"data\": {\"name\": \"%s\", \"address\":\"%s\", \"rssi\": %s}}", device.getName(), device.getAddress(), rssi);
+                ws.sendText(btData);
             } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action))
             {
                 ProgressBar pb = (ProgressBar) findViewById(R.id.progressBar);
                 pb.setVisibility(View.VISIBLE);
+                ws.sendText("{\"action\":\"start.bluetooth.scan\"}");
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
             {
                 ProgressBar pb = (ProgressBar) findViewById(R.id.progressBar);
                 pb.setVisibility(View.INVISIBLE);
+                ws.sendText("{\"action\":\"finished.bluetooth.scan\"}");
             }
         }
     };
