@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.audiofx.BassBoost;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,10 +40,21 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
+import com.neovisionaries.ws.client.OpeningHandshakeException;
+import com.neovisionaries.ws.client.WebSocket;
+import com.neovisionaries.ws.client.WebSocketAdapter;
+import com.neovisionaries.ws.client.WebSocketException;
+import com.neovisionaries.ws.client.WebSocketFactory;
+import com.neovisionaries.ws.client.WebSocketFrame;
+import com.neovisionaries.ws.client.WebSocketState;
+
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+
 
 public class Main2Activity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -50,6 +62,7 @@ public class Main2Activity extends AppCompatActivity
     private BluetoothAdapter mBluetoothAdapter;
     private int REQUEST_ENABLE_BT;
     ArrayAdapter mArrayAdapter;
+    WebSocket ws;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +81,8 @@ public class Main2Activity extends AppCompatActivity
                     Toast.makeText(context, "Scanning is in progress", Toast.LENGTH_LONG).show();
                 } else
                 {
-                    Toast.makeText(context, "Start scanning devices...", Toast.LENGTH_LONG).show();
+                    Toast.makeText(context, "Start scanning devices... " + ws.getState().name(), Toast.LENGTH_LONG).show();
+
                     mArrayAdapter.clear();
                     mBluetoothAdapter.startDiscovery();
                 }
@@ -83,6 +97,172 @@ public class Main2Activity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        try {
+            ws = new WebSocketFactory().createSocket("wss://robikapa-backend.herokuapp.com/ws");
+            ws.addListener(new WebSocketAdapter() {
+                @Override
+                public void onStateChanged(WebSocket websocket, WebSocketState newState) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception
+                {
+                    Log.i("websocket", "connected, loggin in");
+                    ws.sendText("{\"action\":\"login.robot\"}");
+                }
+
+
+                @Override
+                public void onConnectError(WebSocket websocket, WebSocketException exception) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onDisconnected(WebSocket websocket,
+                                           WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame,
+                                           boolean closedByServer) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onContinuationFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onTextFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onBinaryFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onCloseFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onPingFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onPongFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onTextMessage(WebSocket websocket, String text) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onSendingFrame(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onFrameSent(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onFrameUnsent(WebSocket websocket, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onError(WebSocket websocket, WebSocketException cause) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onFrameError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onMessageError(WebSocket websocket, WebSocketException cause, List<WebSocketFrame> frames) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onMessageDecompressionError(WebSocket websocket, WebSocketException cause, byte[] compressed) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onTextMessageError(WebSocket websocket, WebSocketException cause, byte[] data) throws Exception
+                {
+
+                }
+
+
+                @Override
+                public void onSendError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception
+                {
+                }
+
+
+                @Override
+                public void onUnexpectedError(WebSocket websocket, WebSocketException cause) throws Exception
+                {
+                }
+
+
+                @Override
+                public void handleCallbackError(WebSocket websocket, Throwable cause) throws Exception
+                {
+                }
+
+                @Override
+                public void onSendingHandshake(WebSocket websocket, String requestLine, List<String[]> headers) throws Exception {
+
+                }
+            });
+            ws.connectAsynchronously();
+            // Send a ping per 60 seconds.
+            ws.setPingInterval(10000);
+
+        } catch (IOException ex) {
+
+        }
+
+
 
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_LONG;
@@ -146,7 +326,11 @@ public class Main2Activity extends AppCompatActivity
 
     @Override
     public void onDestroy() {
-        unregisterReceiver(mReceiver);
+        try {
+            unregisterReceiver(mReceiver);
+        } catch (Exception ex) {}
+
+        ws.disconnect();
         super.onDestroy();
     }
 
